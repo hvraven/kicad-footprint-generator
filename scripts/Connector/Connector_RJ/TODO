@@ -1,0 +1,4 @@
+- "wings", i.e. ribs or smd pads on the side of the connector
+- fancier shapes for courtyard
+- improved pad silkscreen overlap detection
+- mark pcd edge if applicable
