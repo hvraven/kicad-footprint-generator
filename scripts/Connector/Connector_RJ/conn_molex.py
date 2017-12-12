@@ -19,7 +19,7 @@
 import attr
 import sys
 import os
-from collections import defaultdict
+import collections
 from numbers import Number
 import copy
 #sys.path.append(os.path.join(sys.path[0],"..","..","kicad_mod")) # load kicad_mod path
@@ -38,16 +38,16 @@ from drawing_tools import bevelRectTL
 global_config = {
         'series': '{positions}P{connected}C',
         'lib_name': 'Connector_RJ',
-        'datasheet': 'http://www.molex.com/pdm_docs/sd/{mpn}{number}_sd.pdf',
+        'datasheet': 'http://www.molex.com/pdm_docs/sd/{mpn}{variant}_sd.pdf',
         'descr_format_string': '{series} Cat.{category} modular connector, right angle, {datasheet}',
-        'fp_name_format_string': '{series}_{man}_{mpn}-{number}',
-        'keyword_fp_string': 'modular connector {man} {series} {mpn} Cat.{category} right angle {entry}'
+        'fp_name_format_string': '{series}_{man}_{mpn}-{variant}',
+        'keyword_fp_string': 'modular connector {man} {series} {mpn} Cat.{category} right angle {entry}',
+        'drill_size_multiplier': 1.5,
     }
 
 configs = [
         {
             'man': 'Molex',
-            'series': '{positions}P{connected}C',
             'mpn': '85502',
             'orientation': 'V',
             'category': 3,
@@ -101,6 +101,27 @@ configs = [
 
 precision = 3
 
+def recursive_dict_update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            d[k] = recursive_dict_update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
+
+
+def process_yaml(v, base):
+    if v.isdecimal():
+        return int(v)
+    if v.isnumeric():
+        return round(float(v), precision)
+    ns = v.format(**base)
+    try:
+        return round(eval(ns, None, base), precision)
+    except Exception as e:
+        return ns
+
+
 def instantiate_strings(it, base=None):
     if not base:
         base = it
@@ -108,41 +129,52 @@ def instantiate_strings(it, base=None):
     if isinstance(it, dict):
         for k, v in it.items():
             if isinstance(v, str) and 'string' not in k:
-                ns = v.format(**base)
-                try:
-                    it[k] = round(eval(ns, None, base), precision)
-                except Exception as e:
-                    it[k] = ns
-            elif isinstance(v, Number):
-                it[k] = round(v, precision)
+                it[k] = process_yaml(v, base)
             else:
                 instantiate_strings(v, base)
     elif isinstance(it, list):
         for i, v in enumerate(it):
             if isinstance(v, str):
-                try:
-                    it[i] = round(eval(v, None, base), precision)
-                except Exception as e:
-                    pass
-            elif isinstance(v, Number):
-                it[i] = round(v, precision)
+                it[i] = process_yaml(v, base)
             else:
                 instantiate_strings(v, base)
     elif isinstance(it, tuple):
         raise Exception('no tuples allowed (use list)')
 
 
-
-def expand_configs(configs):
+def expand_config(series):
     out = []
-    for series in configs:
-        for variant in series['variants']:
-            config = copy.deepcopy(series)
-            config.update(global_config)
-            config.update(variant)
-            instantiate_strings(config)
-            out.append(config)
+    for name, variant in series['variants'].items():
+        config = copy.deepcopy(series)
+        config['variant'] = name
+        config.update(global_config)
+        recursive_dict_update(config, variant)
+        instantiate_strings(config)
+        out.append(config)
     return out
+
+
+def set_pad_defaults(config, pad):
+    if 'shape' not in pad:
+        if pad['type'] == 'SMT':
+            pad['shape'] = 'rectangular'
+        else:
+            pad['shape'] = 'circle'
+
+    if 'size' not in pad:
+        if pad['type'] == 'NPTH':
+            pad['size'] = pad['drill']
+        elif pad['type'] == 'THT':
+            pad['size'] = config['drill_size_multiplier'] * pad['drill']
+
+
+def set_default_values(d):
+    for k, v in d.items():
+        try:
+            if 'type' in v:
+                set_pad_defaults(d, v)
+        except:
+            pass
 
 
 def build_base_footprint(config):
@@ -195,15 +227,16 @@ def build_footprint(config):
                         )
 
     if config['pad']['type'] == 'THT':
-        front = origin + (pitch_x * (config['connected'] - 1)/2,
-                          config['pad']['position'])
-        if (args['connected'] / 2 % 2 == 0):
-            front -= (0, pitch_y)
+        ref = origin + (pitch_x * (config['connected'] - 1)/2,
+                        config['pad']['position'])
+        if (config['connected'] / 2 % 2 == 0):
+            ref -= (0, pitch_y)
         pad_pos = origin
     else:
-        front = origin + config['center']
-        pad_pos = front + (-pitch_x * (config['connected'] - 1) / 2,
-                           config['pad']['position'][1])
+        ref = origin + config['center']
+        pad_pos = ref + (-pitch_x * (config['connected'] - 1) / 2,
+                         config['pad']['position'][1])
+    front = ref + (0, config['mount']['position'])
     center = front - (0, config['depth'] / 2)
 
     housing_size = Point(config['width'], config['depth'])
@@ -229,7 +262,7 @@ def build_footprint(config):
 
     # add mounting positions
     mount_config = dict(
-        at=front + config['mount']['position'],
+        at=ref + (config['mount']['separation']/2, 0),
         size=config['mount']['size'],
         shape=shapes[config['mount']['shape']],
         drill=config['mount'].get('drill'),
@@ -239,8 +272,7 @@ def build_footprint(config):
         mount_config['number'] = config['mount']['number']
     kicad_mod.append(Pad(type=types[config['mount']['type']],
         **mount_config))
-    mount_config['at'] = (-mount_config['at'].x,
-                           mount_config['at'].y)
+    mount_config['at'] = ref - (config['mount']['separation']/2, 0)
     kicad_mod.append(Pad(type=types[config['mount']['type']],
         **mount_config))
 
@@ -310,6 +342,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='use confing .yaml files to create footprints.')
     parser.add_argument('--global_config', type=str, nargs='?', help='the config file defining how the footprint will look like. (KLC)', default='../../tools/global_config_files/config_KLCv3.0.yaml')
     parser.add_argument('--series_config', type=str, nargs='?', help='the config file defining series parameters.', default='../conn_config_KLCv3.yaml')
+    parser.add_argument('configuration', type=str, nargs='*')
     args = parser.parse_args()
 
     with open(args.global_config, 'r') as config_stream:
@@ -324,6 +357,15 @@ if __name__ == "__main__":
         except yaml.YAMLError as exc:
             print(exc)
 
-    for config in expand_configs(configs):
-        configuration.update(config)
-        build_footprint(configuration)
+    for path in args.configuration:
+        with open(path, 'r') as f:
+            try:
+                configs = yaml.load(f)
+            except yaml.YAMLError as exc:
+                print(exc)
+        for config in expand_config(configs):
+            c = configuration.copy()
+            c.update(config)
+            set_default_values(c)
+            print('building {man} {mpn}-{variant}'.format(**c))
+            build_footprint(c)

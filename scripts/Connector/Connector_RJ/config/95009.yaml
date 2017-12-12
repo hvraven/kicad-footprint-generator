@@ -1,0 +1,43 @@
+man: Molex
+mpn: 95009
+orientation: V
+category: 3
+depth: 20.57
+pad:
+  type: THT
+  pitch: [1.27, 2.54]
+  drill: 0.89
+  position: 8.89
+mount:
+  type: THT
+  drill: 3.25
+  position: 10.72
+housings:
+  4: &4
+    positions: 4
+    width: 11.18
+    mount:
+      separation: 7.62 
+  6: &6
+    positions: 6
+    width: 13.21
+    mount:
+      separation: 10.16
+  8: &8
+    positions: 8
+    width: 15.24
+    mount:
+      separation: 11.43
+variants:
+  7446:
+    <<: *4
+    connected: 4
+  7647:
+    <<: *6
+    connected: 4
+  7667:
+    <<: *6
+    connected: 6
+  7887:
+    <<: *8
+    connected: 8
