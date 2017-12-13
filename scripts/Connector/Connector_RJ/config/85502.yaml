@@ -1,43 +1,44 @@
 man: Molex
-mpn: 95009
+mpn: 85502
 orientation: V
 category: 3
-depth: 20.57
+depth: 18.1
+center: [0, -0.12]
 pad:
-  type: THT
-  pitch: [1.27, 2.54]
-  drill: 0.89
-  position: 8.89
+  type: SMT
+  pitch: [1.27, 0]
+  size: [.76, 6.35]
+  position: 10.375
 mount:
-  type: NPTH
-  drill: 3.25
-  position: 10.72
-housings:
+  type: SMT
+  size: [5.15, 2.8]
+  position: 7.88
+templates:
   4: &4
     positions: 4
     width: 11.18
     mount:
-      separation: 7.62
+      separation: 12.09
   6: &6
     positions: 6
     width: 13.21
     mount:
-      separation: 10.16
+      separation: 14.12
   8: &8
     positions: 8
     width: 15.24
     mount:
-      separation: 11.43
+      separation: 16.15
 variants:
-  7447:
+  5005:
     <<: *4
     connected: 4
-  7647:
+  5006:
     <<: *6
     connected: 4
-  7667:
+  5007:
     <<: *6
     connected: 6
-  7887:
+  5008:
     <<: *8
     connected: 8
