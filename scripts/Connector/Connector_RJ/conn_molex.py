@@ -42,7 +42,6 @@ global_config = {
         'descr_format_string': '{series} Cat.{category} modular connector, right angle, {datasheet}',
         'fp_name_format_string': '{series}_{man}_{mpn}-{variant}',
         'keyword_fp_string': 'modular connector {man} {series} {mpn} Cat.{category} right angle {entry}',
-        'drill_to_pad_addition': 0.7, # IPC-2221 Level A
     }
 
 configs = [
@@ -143,6 +142,10 @@ def instantiate_strings(it, base=None):
 
 
 def expand_config(series):
+    if not 'variants' in series:
+        series.update(global_config)
+        instantiate_strings(series)
+        return [series]
     out = []
     for name, variant in series['variants'].items():
         config = copy.deepcopy(series)
@@ -154,7 +157,7 @@ def expand_config(series):
     return out
 
 
-def set_pad_defaults(config, pad):
+def set_pad_defaults(pad):
     if 'shape' not in pad:
         if pad['type'] == 'SMT':
             pad['shape'] = 'rectangular'
@@ -162,18 +165,36 @@ def set_pad_defaults(config, pad):
             pad['shape'] = 'circle'
 
     if 'size' not in pad:
-        if pad['type'] == 'NPTH' or pad['type'] == 'THT':
-            pad['size'] = config['drill_to_pad_addition'] + pad['drill']
+        if pad['type'] == 'NPTH':
+            pad['size'] = pad['drill']
+        elif pad['type'] == 'THT':
+            pad['size'] = pad['drill'] + 0.7 # IPC-2221 Level A
 
 
-def set_default_values(d):
-    for k, v in d.items():
-        try:
-            if 'type' in v:
-                set_pad_defaults(d, v)
-        except:
-            pass
+def mirror(point, ref):
+    shifted = point - ref
+    return ref + (-shifted.x, shifted.y)
 
+def add_pad(kicad_mod, pos, args, **kwargs):
+    myargs = {}
+    myargs.update(args)
+    myargs.update(kwargs)
+    set_pad_defaults(myargs)
+
+    opt_args = {}
+    if 'number' in myargs:
+        opt_args['number'] = myargs['number']
+    if 'drill' in args:
+        opt_args['drill'] = myargs['drill']
+
+    kicad_mod.append(Pad(at=pos, type=types[myargs['type']],
+        size=myargs['size'], shape=shapes[myargs['shape']],
+        layers=layers[myargs['type']], **opt_args))
+        
+
+def add_pad_symmetric(kicad_mod, pos, ref, args):
+    add_pad(kicad_mod, pos, args)
+    add_pad(kicad_mod, mirror(pos, ref), args)
 
 def build_base_footprint(config):
     # expand the orientation based on the KLC config
@@ -199,6 +220,8 @@ def add_keepout(kicad_mod, center, x, y):
 shapes = dict(
         circle=Pad.SHAPE_CIRCLE,
         rectangle=Pad.SHAPE_RECT,
+        rect=Pad.SHAPE_RECT,
+        rectangular=Pad.SHAPE_RECT,
         oval=Pad.SHAPE_OVAL,
     )
 types = dict(
@@ -218,12 +241,6 @@ def build_footprint(config):
     pitch_x = config['pad']['pitch'][0]
     pitch_y = config['pad']['pitch'][1]
 
-    pad_shape = shapes[config['pad']['shape']]
-    pad_settings = dict(layers=layers[config['pad']['type']],
-                        drill=config['pad'].get('drill'),
-                        size=config['pad']['size'],
-                        )
-
     if config['pad']['type'] == 'THT':
         ref = origin + (pitch_x * (config['connected'] - 1)/2,
                         config['pad']['position'])
@@ -231,9 +248,12 @@ def build_footprint(config):
             ref -= (0, pitch_y)
         pad_pos = origin
     else:
-        ref = origin + config['center']
+        if 'center' in config:
+            ref = origin - config['center']
+        else:
+            ref = origin
         pad_pos = ref + (-pitch_x * (config['connected'] - 1) / 2,
-                         config['pad']['position'][1])
+                         -config['pad']['position'])
     front = ref + (0, config['mount']['position'])
     center = front - (0, config['depth'] / 2)
 
@@ -243,11 +263,6 @@ def build_footprint(config):
 
     # add pads
     for i in range(1, config['connected']+1):
-        if i == 1 and pad_shape == Pad.SHAPE_CIRCLE:
-            shape = Pad.SHAPE_RECT
-        else:
-            shape = pad_shape
-
         y = 0
         if i % 2 == 0:
             if config['connected'] / 2 % 2 == 0:
@@ -255,24 +270,24 @@ def build_footprint(config):
             else:
                 y = pitch_y
         position = pad_pos + ((i-1) * pitch_x, y)
-        kicad_mod.append(Pad(number=i, at=position, shape=shape,
-            type=types[config['pad']['type']], **pad_settings))
+        if i == 1 and config['pad']['type'] == 'THT':
+            add_pad(kicad_mod, position, config['pad'], number=str(i),
+                    shape='rect')
+        else:
+            add_pad(kicad_mod, position, config['pad'], number=str(i))
 
     # add mounting positions
-    mount_config = dict(
-        at=ref + (config['mount']['separation']/2, 0),
-        size=config['mount']['size'],
-        shape=shapes[config['mount']['shape']],
-        drill=config['mount'].get('drill'),
-        layers=layers[config['mount']['type']],
-    )
-    if 'number' in config['mount']:
-        mount_config['number'] = config['mount']['number']
-    kicad_mod.append(Pad(type=types[config['mount']['type']],
-        **mount_config))
-    mount_config['at'] = ref - (config['mount']['separation']/2, 0)
-    kicad_mod.append(Pad(type=types[config['mount']['type']],
-        **mount_config))
+    mount_pos = ref - (config['mount']['separation']/2, 0)
+    add_pad_symmetric(kicad_mod, mount_pos, center, config['mount'])
+
+    # draw additional side markes (relative to left mounting hole position)
+    if 'side' in config:
+        for extra in config['side']:
+            position = mount_pos + extra['position']
+            if extra['type'] in types:
+                add_pad_symmetric(kicad_mod, position, center, extra)
+            else:
+                raise Exception('type not implemented: {}'.format(extra['type']))
 
     kicad_mod.append(RectLine(start=center - housing_size/2,
                               end=center + housing_size/2, layer='F.Fab',
@@ -302,7 +317,7 @@ def build_footprint(config):
     courtyard_edges = {k: ceil(v / config['courtyard_grid']) * config['courtyard_grid']
                        for k, v in body_edges.items()}
     if config['pad']['type'] == 'SMT':
-        courtyard_edges['top'] = ceil((pad_pos.y - pad_settings['size'][1]/2) /
+        courtyard_edges['top'] = ceil((pad_pos.y - config['pad']['size'][1]/2) /
                 config['courtyard_grid']) * config['courtyard_grid']
     for k, v in courtyard_edges.items():
         if v > 0:
@@ -364,6 +379,5 @@ if __name__ == "__main__":
         for config in expand_config(configs):
             c = configuration.copy()
             c.update(config)
-            set_default_values(c)
             print('building {man} {mpn}-{variant}'.format(**c))
             build_footprint(c)
