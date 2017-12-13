@@ -8,6 +8,7 @@ category: 3
 width: 15.24
 depth: 18.10
 center: [0, -0.445]
+datasheet: http://www.molex.com/pdm_docs/sd/955406888_sd.pdf
 pad:
   type: SMT
   pitch: [1.27, 0]
@@ -22,4 +23,5 @@ side:
   - type: SMT
     size: [2.54, 2.94]
     number: SH
-    position: [-2.75, 3.05]
+    position: [2.75, 3.05]
+    reference: mount
