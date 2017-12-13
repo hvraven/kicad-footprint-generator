@@ -42,7 +42,7 @@ global_config = {
         'descr_format_string': '{series} Cat.{category} modular connector, right angle, {datasheet}',
         'fp_name_format_string': '{series}_{man}_{mpn}-{variant}',
         'keyword_fp_string': 'modular connector {man} {series} {mpn} Cat.{category} right angle {entry}',
-        'drill_size_multiplier': 1.5,
+        'drill_to_pad_addition': 0.7, # IPC-2221 Level A
     }
 
 configs = [
@@ -162,10 +162,8 @@ def set_pad_defaults(config, pad):
             pad['shape'] = 'circle'
 
     if 'size' not in pad:
-        if pad['type'] == 'NPTH':
-            pad['size'] = pad['drill']
-        elif pad['type'] == 'THT':
-            pad['size'] = config['drill_size_multiplier'] * pad['drill']
+        if pad['type'] == 'NPTH' or pad['type'] == 'THT':
+            pad['size'] = config['drill_to_pad_addition'] + pad['drill']
 
 
 def set_default_values(d):
