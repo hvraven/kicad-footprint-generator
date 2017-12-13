@@ -28,16 +28,38 @@ housings:
     width: 15.24
     mount:
       separation: 11.43
+  panel_stops: &stops
+    side:
+      - type: rectangle
+        reference: side
+        start: [0, 8.3]
+        stop: [0.85, 7.03]
 variants:
+  7441:
+    <<: *4
+    <<: *stops
+    connected: 4
   7447:
     <<: *4
     connected: 4
-  7647:
+  7641:
+    <<: *6
+    <<: *stops
+    connected: 4
+  2647:
     <<: *6
     connected: 4
+  7661:
+    <<: *6
+    <<: *stops
+    connected: 6
   7667:
     <<: *6
     connected: 6
+  7881:
+    <<: *8
+    <<: *stops
+    connected: 8
   7887:
     <<: *8
     connected: 8
