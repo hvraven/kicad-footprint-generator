@@ -9,7 +9,7 @@ pad:
   drill: 0.89
   position: 8.89
 mount:
-  type: THT
+  type: NPTH
   drill: 3.25
   position: 10.72
 housings:
