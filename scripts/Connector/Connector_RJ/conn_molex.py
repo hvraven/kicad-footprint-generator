@@ -22,6 +22,7 @@ import os
 import collections
 from numbers import Number
 import copy
+import requests
 #sys.path.append(os.path.join(sys.path[0],"..","..","kicad_mod")) # load kicad_mod path
 
 # export PYTHONPATH="${PYTHONPATH}<path to kicad-footprint-generator directory>"
@@ -143,17 +144,18 @@ def instantiate_strings(it, base=None):
 
 def expand_config(series):
     if not 'variants' in series:
-        series.update(global_config)
-        instantiate_strings(series)
-        return [series]
+        d = global_config.copy()
+        d.update(series)
+        instantiate_strings(d)
+        return [d]
     out = []
     for name, variant in series['variants'].items():
-        config = copy.deepcopy(series)
-        config['variant'] = name
-        config.update(global_config)
-        recursive_dict_update(config, variant)
-        instantiate_strings(config)
-        out.append(config)
+        d = global_config.copy()
+        d.update(copy.deepcopy(series))
+        d['variant'] = name
+        recursive_dict_update(d, variant)
+        instantiate_strings(d)
+        out.append(d)
     return out
 
 
@@ -173,7 +175,7 @@ def set_pad_defaults(pad):
 
 def mirror(point, ref):
     shifted = point - ref
-    return ref + (-shifted.x, shifted.y)
+    return Point(ref.x - shifted.x, point.y)
 
 def add_pad(kicad_mod, pos, args, **kwargs):
     myargs = {}
@@ -196,6 +198,10 @@ def add_pad_symmetric(kicad_mod, pos, ref, args):
     add_pad(kicad_mod, pos, args)
     add_pad(kicad_mod, mirror(pos, ref), args)
 
+
+def url_exists(url):
+    return requests.head(url).status_code == 200
+
 def build_base_footprint(config):
     # expand the orientation based on the KLC config
     config['entry'] = config['entry_direction'][config['orientation']]
@@ -209,6 +215,9 @@ def build_base_footprint(config):
     kicad_mod.setTags(config['keyword_fp_string'].format(**config))
     if config['pad']['type'] == 'SMT':
         kicad_mod.setAttribute('smd')
+
+    if not url_exists(config['datasheet']):
+        raise Exception('datasheet url is invalid: ' + config['datasheet'])
 
     return kicad_mod
 
@@ -277,15 +286,32 @@ def build_footprint(config):
             add_pad(kicad_mod, position, config['pad'], number=str(i))
 
     # add mounting positions
-    mount_pos = ref - (config['mount']['separation']/2, 0)
+    mount_pos = ref + (config['mount']['separation']/2, 0)
     add_pad_symmetric(kicad_mod, mount_pos, center, config['mount'])
 
     # draw additional side markes (relative to left mounting hole position)
     if 'side' in config:
         for extra in config['side']:
-            position = mount_pos + extra['position']
+            if extra['reference'] == 'side':
+                side_ref = ref + (housing_size.x/2, 0)
+            elif extra['reference'] == 'mount':
+                side_ref = mount_pos
+            else:
+                raise Exception('Unknown side reference: ' + extra['reference'])
+
             if extra['type'] in types:
+                position = side_ref + extra['position']
                 add_pad_symmetric(kicad_mod, position, center, extra)
+            elif extra['type'] == 'rectangle':
+                kicad_mod.append(RectLine(start=side_ref + extra['start'],
+                                          end=side_ref + extra['stop'],
+                                          layer='F.Fab',
+                                          width=config['fab_line_width']))
+                kicad_mod.append(RectLine(
+                    start=mirror(side_ref + extra['start'], center),
+                    end=mirror(side_ref + extra['stop'], center),
+                    layer='F.Fab', width=config['fab_line_width']))
+
             else:
                 raise Exception('type not implemented: {}'.format(extra['type']))
 
@@ -346,6 +372,7 @@ def build_footprint(config):
     if not os.path.isdir(config['outdir']):
         os.makedirs(config['outdir'])
     filename = '{outdir:s}{footprint_name:s}.kicad_mod'.format(**config)
+
 
     file_handler = KicadFileHandler(kicad_mod)
     file_handler.writeFile(filename)
