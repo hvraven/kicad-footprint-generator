@@ -29,7 +29,7 @@ housings:
     mount:
       separation: 11.43
 variants:
-  7446:
+  7447:
     <<: *4
     connected: 4
   7647:
