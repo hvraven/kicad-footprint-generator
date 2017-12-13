@@ -1,0 +1,72 @@
+man: Molex
+mpn: 95501
+orientation: V
+category: 3
+depth: 20.57
+mount:
+  type: NPTH
+  drill: 3.25
+  position: 10.72
+templates:
+  4: &4
+    positions: 4
+    width: 11.18
+    mount:
+      separation: 7.62
+  6: &6
+    positions: 6
+    width: 13.21
+    mount:
+      separation: 10.16
+  8: &8
+    positions: 8
+    width: 15.24
+    mount:
+      separation: 11.43
+  THT: &THT
+    pad:
+      type: THT
+      pitch: [1.27, 2.54]
+      drill: 0.90
+      position: 8.89
+  SMT: &SMT
+    pad:
+      type: SMT
+      pitch: [1.27, 0]
+      size: [.76, 6.35]
+      position: 10.225
+variants:
+  2401:
+    <<: *4
+    <<: *THT
+    connected: 4
+  2601:
+    <<: *6
+    <<: *THT
+    connected: 4
+  2611:
+    <<: *6
+    <<: *THT
+    connected: 6
+  2821:
+    <<: *8
+    <<: *THT
+    connected: 8
+  6449:
+    <<: *4
+    <<: *SMT
+    connected: 4
+  6649:
+    <<: *6
+    <<: *SMT
+    connected: 4
+  6669:
+    <<: *6
+    <<: *SMT
+    connected: 6
+  6889:
+    <<: *8
+    <<: *SMT
+    connected: 8
+
+
