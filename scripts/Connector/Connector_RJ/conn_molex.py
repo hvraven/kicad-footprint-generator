@@ -39,7 +39,7 @@ from drawing_tools import bevelRectTL
 global_config = {
         'series': '{positions}P{connected}C',
         'lib_name': 'Connector_RJ',
-        'datasheet': 'http://www.molex.com/pdm_docs/sd/{mpn}{variant}_sd.pdf',
+        'datasheet': 'https://www.molex.com/pdm_docs/sd/{mpn}{variant}_sd.pdf',
         'descr_format_string': '{series} Cat.{category} modular connector, right angle, {datasheet}',
         'fp_name_format_string': '{series}_{man}_{mpn}-{variant}',
         'keyword_fp_string': 'modular connector {man} {series} {mpn} Cat.{category} right angle {entry}',
