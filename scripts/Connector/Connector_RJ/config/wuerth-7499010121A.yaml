@@ -1,0 +1,37 @@
+man: Wuerth
+mpn: 7499010121A
+orientation: H
+category: 10/100Base-TX
+positions: 8
+connected: 8
+depth: 25.30
+width: 16.2
+datasheet: https://katalog.we-online.de/pbs/datasheet/7499010121A.pdf
+fp_name_format_string: 'RJ45-{man}-{mpn}'
+descr_format_string: '{datasheet}'
+keyword_fp_string: '{category} RJ45 ethernet magnetic transformer connector {entry}'
+pad:
+  type: THT
+  pitch: [-1.27, -2.54]
+  drill: 0.9
+  position: 8.89 - 2.54
+mount:
+  type: NPTH
+  drill: 3.25
+  position: 10.80
+  separation: 11.43
+side:
+  - type: NPTH
+    drill: 1.6
+    position: [(15.8-11.43)/2, -3.05]
+    reference: mount
+  - type: THT
+    drill: 1.02
+    position: [5.85/2, -8.89 - 4.83]
+    reference: mount_center
+    numbers: [10, 11]
+  - type: THT
+    drill: 1.02
+    position: [10.93/2, -8.89 - 4.83]
+    reference: mount_center
+    numbers: [9, 12]
