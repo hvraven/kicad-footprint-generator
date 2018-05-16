@@ -193,15 +193,16 @@ def add_pad(kicad_mod, pos, args, **kwargs):
     kicad_mod.append(Pad(at=pos, type=types[myargs['type']],
         size=myargs['size'], shape=shapes[myargs['shape']],
         layers=layers[myargs['type']], **opt_args))
-        
+
+    return myargs
 
 def add_pad_symmetric(kicad_mod, pos, ref, args):
     if 'numbers' in args:
         add_pad(kicad_mod, pos, args, number=args['numbers'][0])
-        add_pad(kicad_mod, mirror(pos, ref), args, number=args['numbers'][1])
+        return add_pad(kicad_mod, mirror(pos, ref), args, number=args['numbers'][1])
     else:
         add_pad(kicad_mod, pos, args)
-        add_pad(kicad_mod, mirror(pos, ref), args)
+        return add_pad(kicad_mod, mirror(pos, ref), args)
 
 
 def url_exists(url):
@@ -275,6 +276,8 @@ def build_footprint(config):
 
     kicad_mod = build_base_footprint(config)
 
+    bounding_box = [center - housing_size/2, center + housing_size/2]
+
     pin_one_left = config['pad']['pitch'][0] > 0
 
     # add pads
@@ -292,9 +295,26 @@ def build_footprint(config):
         else:
             add_pad(kicad_mod, position, config['pad'], number=str(i))
 
+    silk_line_extend_point = Point(config['silk_line_extend'],
+                                  config['silk_line_extend'])
+    slep = silk_line_extend_point
+
+    body_edges = dict(top=(center - housing_size/2 - slep).y,
+                      left=(center - housing_size/2 - slep).x,
+                      bottom=(center + housing_size/2 + slep).y,
+                      right=(center + housing_size/2 + slep).x)
+
+
     # add mounting positions
     mount_pos = ref + (config['mount']['separation']/2, 0)
-    add_pad_symmetric(kicad_mod, mount_pos, center, config['mount'])
+    fargs = add_pad_symmetric(kicad_mod, mount_pos, center, config['mount'])
+    try:
+        body_edges['right'] = max(body_edges['right'],
+                mount_pos.x + abs(fargs['size'] / 2))
+    except:
+        body_edges['right'] = max(body_edges['right'],
+                mount_pos.x + abs(fargs['size'][0] / 2))
+    body_edges['left'] = mirror(Point(body_edges['right'], 0), center).x
 
     # draw additional side markes (relative to left mounting hole position)
     if 'side' in config:
@@ -310,7 +330,14 @@ def build_footprint(config):
 
             if extra['type'] in types:
                 position = side_ref + extra['position']
-                add_pad_symmetric(kicad_mod, position, center, extra)
+                fargs = add_pad_symmetric(kicad_mod, position, center, extra)
+                try:
+                    body_edges['right'] = max(body_edges['right'],
+                            position.x + abs(fargs['size'] / 2))
+                except:
+                    body_edges['right'] = max(body_edges['right'],
+                            position.x + abs(fargs['size'][0] / 2))
+
             elif extra['type'] == 'rectangle':
                 kicad_mod.append(RectLine(start=side_ref + extra['start'],
                                           end=side_ref + extra['stop'],
@@ -320,9 +347,12 @@ def build_footprint(config):
                     start=mirror(side_ref + extra['start'], center),
                     end=mirror(side_ref + extra['stop'], center),
                     layer='F.Fab', width=config['fab_line_width']))
-
+                body_edges['right'] = max((body_edges['right'],
+                        (side_ref + extra['start']).x,
+                        (side_ref + extra['stop']).x))
             else:
                 raise Exception('type not implemented: {}'.format(extra['type']))
+            body_edges['left'] = mirror(Point(body_edges['right'], 0), center).x
 
     if pin_one_left:
         points = [
@@ -344,12 +374,6 @@ def build_footprint(config):
                 ]
     kicad_mod.append(PolygoneLine(polygone=points, layer='F.Fab',
                                   width=config['fab_line_width']))
-    #kicad_mod.append(RectLine(
-    #    start=center - housing_size/2, end=center + housing_size/2,
-    #    layer='F.Fab', width=config['fab_line_width']))
-    silk_line_extend_point = Point(config['silk_line_extend'],
-                                  config['silk_line_extend'])
-    slep = silk_line_extend_point
     if config['pad']['type'] == 'THT':
         kicad_mod.append(RectLine(
             start=center - housing_size/2 - silk_line_extend_point,
@@ -381,11 +405,6 @@ def build_footprint(config):
                 ]
         kicad_mod.append(PolygoneLine(polygone=points, layer='F.SilkS',
                                       width=config['silk_line_width']))
-
-    body_edges = dict(top=(center - housing_size/2 - slep).y,
-                      left=(center - housing_size/2 - slep).x,
-                      bottom=(center + housing_size/2 + slep).y,
-                      right=(center + housing_size/2 + slep).x)
 
     courtyard_edges = {k: ceil(v / config['courtyard_grid']) * config['courtyard_grid']
                        for k, v in body_edges.items()}
