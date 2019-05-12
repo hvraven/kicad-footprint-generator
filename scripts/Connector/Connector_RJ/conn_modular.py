@@ -19,17 +19,19 @@
 import attr
 import sys
 import os
-import collections
+from collections.abc import Mapping
 from numbers import Number
-import copy
 import requests
+import shapely.ops
+import shapely.geometry
 #sys.path.append(os.path.join(sys.path[0],"..","..","kicad_mod")) # load kicad_mod path
 
 # export PYTHONPATH="${PYTHONPATH}<path to kicad-footprint-generator directory>"
 sys.path.append(os.path.join(sys.path[0], "..", "..", ".."))  # load parent path of KicadModTree
-from math import sqrt, ceil
+from math import sqrt, ceil, copysign
 import argparse
 import yaml
+import copy as pcopy
 from KicadModTree import *
 
 sys.path.append(os.path.join(sys.path[0], "..", "..", "tools"))  # load parent path of tools
@@ -41,7 +43,7 @@ global_config = {
         'lib_name': 'Connector_RJ',
         'datasheet': 'https://www.molex.com/pdm_docs/sd/{mpn}{variant}_sd.pdf',
         'descr_format_string': '{series} Cat.{category} modular connector, right angle, {datasheet}',
-        'fp_name_format_string': '{series}_{man}_{mpn}-{variant}',
+        'fp_name_format_string': '{series}_{man}_{mpn}{variant}_{orientation}',
         'keyword_fp_string': 'modular connector {man} {series} {mpn} Cat.{category} right angle {entry}',
         'silk_line_extend': 0.25
     }
@@ -104,7 +106,7 @@ precision = 3
 
 def recursive_dict_update(d, u):
     for k, v in u.items():
-        if isinstance(v, collections.Mapping):
+        if isinstance(v, Mapping):
             d[k] = recursive_dict_update(d.get(k, {}), v)
         else:
             d[k] = v
@@ -152,7 +154,7 @@ def expand_config(series):
     out = []
     for name, variant in series['variants'].items():
         d = global_config.copy()
-        d.update(copy.deepcopy(series))
+        d.update(pcopy.deepcopy(series))
         d['variant'] = name
         recursive_dict_update(d, variant)
         instantiate_strings(d)
@@ -194,16 +196,30 @@ def add_pad(kicad_mod, pos, args, **kwargs):
         size=myargs['size'], shape=shapes[myargs['shape']],
         layers=layers[myargs['type']], **opt_args))
 
-    return myargs
+    if myargs['shape'] == 'circle':
+        shape = shapely.geometry.Point(pos.x, pos.y).buffer(myargs['size'] / 2)
+    else: # rect or roundrect
+        if isinstance(myargs['size'], float):
+            size = (myargs['size'], myargs['size'])
+        else:
+            size = myargs['size']
+        shape = shapely.geometry.box(pos.x - size[0] / 2,
+                                     pos.y - size[1] / 2,
+                                     pos.x + size[0] / 2,
+                                     pos.y + size[1] / 2)
+
+    return shape, myargs
 
 def add_pad_symmetric(kicad_mod, pos, ref, args):
     if 'numbers' in args:
-        add_pad(kicad_mod, pos, args, number=args['numbers'][0])
-        return add_pad(kicad_mod, mirror(pos, ref), args, number=args['numbers'][1])
+        shape1, _ = add_pad(kicad_mod, pos, args, number=args['numbers'][0])
+        shape2, retargs = add_pad(kicad_mod, mirror(pos, ref), args,
+                number=args['numbers'][1])
     else:
-        add_pad(kicad_mod, pos, args)
-        return add_pad(kicad_mod, mirror(pos, ref), args)
+        shape1, _ = add_pad(kicad_mod, pos, args)
+        shape2, retargs = add_pad(kicad_mod, mirror(pos, ref), args)
 
+    return shapely.ops.unary_union((shape1, shape2)), retargs
 
 def url_exists(url):
     return requests.head(url).status_code == 200
@@ -227,16 +243,55 @@ def build_base_footprint(config):
 
     return kicad_mod
 
-
 def add_keepout(kicad_mod, center, x, y):
     return addRectangularKeepout(kicad_mod, center, (x,y))
 
+def get_courtyard_from_shapes(*shapes, config):
+    squares = list(map(lambda x: x.envelope, shapes))
+    outer = shapely.ops.unary_union(squares).boundary
+    expanded = shapely.geometry.LinearRing(outer.coords).parallel_offset(
+            config['courtyard_offset']['connector'], side='left', join_style=2,
+            mitre_limit=100)
+
+    if isinstance(expanded, shapely.geometry.MultiLineString):
+        # we got several outlines, usually most of them are just a line
+        # we take the longest line to be the correct one
+        expanded = sorted(expanded, key=lambda x: x.length)[-1]
+
+    def round_grid(coord, grid):
+        return tuple(map(lambda x: copysign(ceil(abs(round(x, 3)) / grid) *
+            grid, x), coord))
+    rounded = map(lambda x: round_grid(x, config['courtyard_grid']),
+            expanded.coords)
+    return shapely.geometry.LinearRing(rounded)
+
+def filter_silk_crossing_pads(points, pads, config):
+    boundary = shapely.geometry.MultiLineString(
+            shapely.ops.unary_union(pads).boundary)
+    clearance = config['silk_pad_clearance'] + config['silk_line_width']/2
+    rings = list(map(shapely.geometry.LinearRing, boundary))
+    for ring in rings:
+        if not ring.is_ccw:
+            ring.coords = list(ring.coords)[::-1]
+    for ring in rings:
+        print(ring.is_ccw)
+        print(ring)
+    forbidden = list(
+            map(lambda x: shapely.geometry.Polygon(
+                x.parallel_offset(clearance, side='left', join_style=2)),
+                rings))
+    print(forbidden)
+    line = shapely.geometry.LineString(points)
+    splitted = shapely.ops.split(line, forbidden)
+    good = filter(lambda x: not x.within(forbidden), splitted)
+    return list(map(lambda x: list(map(Vector3D, x.coords)), good))
 
 shapes = dict(
         circle=Pad.SHAPE_CIRCLE,
         rectangle=Pad.SHAPE_RECT,
         rect=Pad.SHAPE_RECT,
         rectangular=Pad.SHAPE_RECT,
+        roundrect=Pad.SHAPE_ROUNDRECT,
         oval=Pad.SHAPE_OVAL,
     )
 types = dict(
@@ -274,6 +329,9 @@ def build_footprint(config):
 
     housing_size = Point(config['width'], config['depth'])
 
+    pads = []
+    shapes = []
+
     kicad_mod = build_base_footprint(config)
 
     bounding_box = [center - housing_size/2, center + housing_size/2]
@@ -290,10 +348,11 @@ def build_footprint(config):
                 y = pitch_y
         position = pad_pos + ((i-1) * pitch_x, y)
         if i == 1 and config['pad']['type'] == 'THT':
-            add_pad(kicad_mod, position, config['pad'], number=str(i),
-                    shape='rect')
+            pads.append(add_pad(kicad_mod, position, config['pad'],
+                          number=str(i), shape='roundrect')[0])
         else:
-            add_pad(kicad_mod, position, config['pad'], number=str(i))
+            pads.append(add_pad(kicad_mod, position, config['pad'],
+                        number=str(i))[0])
 
     silk_line_extend_point = Point(config['silk_line_extend'],
                                   config['silk_line_extend'])
@@ -304,10 +363,16 @@ def build_footprint(config):
                       bottom=(center + housing_size/2 + slep).y,
                       right=(center + housing_size/2 + slep).x)
 
+    shapes.append(shapely.geometry.box((center - housing_size/2 - slep).x,
+                      (center - housing_size/2 - slep).y,
+                      (center + housing_size/2 + slep).x,
+                      (center + housing_size/2 + slep).y))
 
     # add mounting positions
     mount_pos = ref + (config['mount']['separation']/2, 0)
-    fargs = add_pad_symmetric(kicad_mod, mount_pos, center, config['mount'])
+    shape, fargs = add_pad_symmetric(kicad_mod, mount_pos, center,
+                                     config['mount'])
+    pads += shape
     try:
         body_edges['right'] = max(body_edges['right'],
                 mount_pos.x + abs(fargs['size'] / 2))
@@ -390,10 +455,8 @@ def build_footprint(config):
                 pfun(startp + (-.5, .5)),
                 pfun(startp),
                 ]
-        kicad_mod.append(PolygoneLine(polygone=points,
-            layer='F.SilkS', width=config['silk_line_width']))
     else:
-        silk_pad_stop_x = pad_pos.x - 0.76/2 - config['silk_pad_clearance'] 
+        silk_pad_stop_x = pad_pos.x - config['pad']['size'][0]/2 - config['silk_pad_clearance'] - config['silk_line_width'] / 2 - 0.01
         points = [
                 (silk_pad_stop_x, pad_pos.y - config['pad']['size'][1]/2),
                 (silk_pad_stop_x, (center -housing_size / 2 - slep).y ),
@@ -403,25 +466,22 @@ def build_footprint(config):
                 center + housing_size / 2 - (-slep.x, housing_size.y + slep.y),
                 (-silk_pad_stop_x, (center -housing_size / 2 - slep).y),
                 ]
-        kicad_mod.append(PolygoneLine(polygone=points, layer='F.SilkS',
-                                      width=config['silk_line_width']))
 
-    courtyard_edges = {k: ceil(v / config['courtyard_grid']) * config['courtyard_grid']
-                       for k, v in body_edges.items()}
-    if config['pad']['type'] == 'SMT':
-        courtyard_edges['top'] = ceil((pad_pos.y - config['pad']['size'][1]/2) /
-                config['courtyard_grid']) * config['courtyard_grid']
-    for k, v in courtyard_edges.items():
-        if v > 0:
-            courtyard_edges[k] += config['courtyard_offset']['connector']
-        else:
-            courtyard_edges[k] -= config['courtyard_offset']['connector']
-    kicad_mod.append(RectLine(start=(courtyard_edges['left'],
-                                     courtyard_edges['top']),
-                              end=(courtyard_edges['right'],
-                                   courtyard_edges['bottom']),
+    for line in filter_silk_crossing_pads(points, pads, config):
+        print(line)
+        kicad_mod.append(PolygoneLine(polygone=line,
+            layer='F.SilkS', width=config['silk_line_width']))
+
+    courtyard = get_courtyard_from_shapes(*pads, *shapes, config=config)
+    kicad_mod.append(PolygoneLine(polygone=courtyard.coords,
                               layer='F.CrtYd',
                               width=config['courtyard_line_width']))
+
+    courtyard_edges = dict(
+            top=courtyard.bounds[0],
+            bottom=courtyard.bounds[2],
+            left=courtyard.bounds[1],
+            right=courtyard.bounds[3])
 
     ######################### Text Fields ###############################
     addTextFields(kicad_mod, config, body_edges=body_edges,
@@ -433,6 +493,7 @@ def build_footprint(config):
     lib_name = configuration['lib_name_format_string'].format(**config)
     model_name = '{model3d_path_prefix}{lib_name}.3dshapes/{footprint_name}.wrl'.format(**config)
     kicad_mod.append(Model(filename=model_name))
+
 
     config['outdir'] = '{lib_name:s}.pretty/'.format(**config)
     if not os.path.isdir(config['outdir']):

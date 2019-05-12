@@ -87,3 +87,13 @@ SSOP-32_11.3x20.5mm_P1.27mm:
   num_pins_x: 0
   num_pins_y: 16
 
+Mini-Circuits_X211:
+  size_source: 'https://ww2.minicircuits.com/case_style/XX211.pdf'
+  body_size_x: 4.14
+  body_size_y: 5.33
+  overall_size_x: 6.86
+  lead_width: 0.76
+  lead_len: 1.27
+  pitch: 1.27
+  num_pins_x: 0
+  num_pins_y: 8

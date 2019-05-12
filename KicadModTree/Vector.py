@@ -289,7 +289,7 @@ class Vector3D(Vector2D):
                          'z': self.z + other.z})
 
     def __iadd__(self, value):
-        other = Vector2D.__arithmetic_parse(value)
+        other = Vector3D.__arithmetic_parse(value)
         self.x += other.x
         self.y += other.y
         self.z += other.z
@@ -297,7 +297,7 @@ class Vector3D(Vector2D):
         return self
 
     def __neg__(self):
-        return Vector2D({'x': -self.x,
+        return Vector3D({'x': -self.x,
                          'y': -self.y,
                          'z': -self.z})
 
@@ -309,7 +309,7 @@ class Vector3D(Vector2D):
                          'z': self.z - other.z})
 
     def __isub__(self, value):
-        other = Vector2D.__arithmetic_parse(value)
+        other = Vector3D.__arithmetic_parse(value)
         self.x -= other.x
         self.y -= other.y
         self.z -= other.z

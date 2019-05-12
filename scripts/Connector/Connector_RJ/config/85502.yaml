@@ -1,6 +1,6 @@
 man: Molex
 mpn: 85502
-orientation: V
+orientation: H
 category: 3
 depth: 18.1
 center: [0, -0.12]
@@ -11,6 +11,7 @@ pad:
   position: 10.375
 mount:
   type: SMT
+  number: MP
   size: [5.15, 2.8]
   position: 7.88
 templates:
