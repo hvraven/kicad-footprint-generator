@@ -1,0 +1,27 @@
+Mini-Circuits_DB1627:
+  device_type: DFN
+  library: RF_Mini-Circuits
+  manufacturer: Mini-Circuits
+  custom_name_format: "{man}_{mpn}"
+  part_number: DB1627
+  size_source: https://ww2.minicircuits.com/case_style/DB1627.pdf
+  ipc_class: dfn
+  body_size_x:
+    nominal: 3.81
+    tolerance: 0.127
+  body_size_y:
+    nominal: 4.06
+    tolerance: 0.127
+  body_height:
+    maximum: 4.06
+
+  lead_width:
+    nominal: 0.71
+    tolerance: 0.127
+  lead_len:
+    nominal: 1.02
+    tolerance: 0.127
+
+  pitch: 1.27
+  num_pins_x: 3
+  num_pins_y: 0
