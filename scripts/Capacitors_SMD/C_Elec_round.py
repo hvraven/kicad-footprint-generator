@@ -14,8 +14,6 @@ sys.path.append(os.path.join(sys.path[0], "..", "tools"))  # load parent path of
 from ipc_pad_size_calculators import *
 
 def create_footprint(name, configuration, **kwargs):
-    kicad_mod = Footprint(name)
-
     # init kicad footprint
     datasheet = ", " + kwargs['datasheet'] if 'datasheet' in kwargs else ""
     description = "SMD capacitor, aluminum electrolytic"
@@ -41,6 +39,20 @@ def create_footprint(name, configuration, **kwargs):
         'height': device_dimensions['body_height'].nominal,
         'diameter': device_dimensions['body_diameter'].nominal
     }
+
+    # set name to structure given by KLC
+    name = '_'.join(filter(lambda x: x is not None, (
+            name.split('_')[0],
+            "Elec",
+            kwargs.get("manufacturer"),
+            "D{}mm".format(body_size["diameter"]),
+            "H{}mm".format(body_size["height"]),
+            "{}x{}mm".format(body_size["length"], body_size["width"]),
+            kwargs.get("modifiers"),
+            kwargs.get("options"),
+            )))
+
+    kicad_mod = Footprint(name)
 
     description += ", " + str(body_size['diameter']) + "x" + str(body_size['height']) + "mm"
     kicad_mod.setDescription(description + datasheet)
