@@ -75,42 +75,69 @@ def create_footprint(name, configuration, **kwargs):
         pad_params['radius_ratio'] = 0.25
         pad_params['maximum_radius'] = 0.25
 
-    # prefer calculating pads from lead dimensions per IPC
-    # fall back to using pad sizes directly if necessary
-    if ('lead_length' in kwargs) and ('lead_width' in kwargs) and ('lead_spacing' in kwargs):
-        # gather IPC data (unique parameters for >= 10mm tall caps)
-        ipc_density_suffix = '' if body_size['height'] < 10 else '_10mm'
-        ipc_density = configuration['ipc_density']
-        ipc_data = ipc_defintions['ipc_spec_capae_crystal'][ipc_density + ipc_density_suffix]
-        ipc_round_base = ipc_defintions['ipc_spec_capae_crystal']['round_base']
-        
-        manf_tol = {
-            'F': configuration.get('manufacturing_tolerance', 0.1),
-            'P': configuration.get('placement_tolerance', 0.05)
-        }
-        
-        # # fully tolerance lead dimensions; leads are dimensioned like SOIC so use gullwing calculator
-        device_dimensions['lead_width'] = TolerancedSize.fromYaml(kwargs, base_name='lead_width')
+    # calculate pads from lead dimensions per IPC
+    if not 'lead_width' in kwargs:
+        raise KeyError("\'lead_width\' must be specified in size definition")
+    device_dimensions['lead_width'] = TolerancedSize.fromYaml(kwargs, base_name='lead_width')
+
+    # two out of lead_length, lead_spacing, lead_outside must be defined
+    # in the end we use the length and outside measurements, so we have to
+    # define those
+    if 'lead_length' not in kwargs:
+        # spacing and outside must be defined
+        if 'lead_length' not in kwargs and 'lead_outside' not in kwargs:
+            raise KeyError("exactly two out of lead_length, lead_spacing and lead_outside must be defined")
+        device_dimensions['lead_spacing'] = TolerancedSize.fromYaml(kwargs,
+            base_name='lead_spacing')
+        device_dimensions['lead_outside'] = TolerancedSize.fromYaml(kwargs,
+            base_name='lead_outside')
+        device_dimensions['lead_length'] = TolerancedSize(
+            maximum=(device_dimensions['lead_outside'].maximum -
+                device_dimensions['lead_spacing'].minimum) / 2,
+            minimum=(device_dimensions['lead_outside'].minimum -
+                device_dimensions['lead_spacing'].maximum) / 2)
+    elif 'lead_outside' not in kwargs:
+        if 'lead_length' not in kwargs and 'lead_spacing' not in kwargs:
+            raise KeyError("exactly two out of lead_length, lead_spacing and lead_outside must be defined")
         device_dimensions['lead_spacing'] = TolerancedSize.fromYaml(kwargs, base_name='lead_spacing')
-        device_dimensions['lead_length'] = TolerancedSize.fromYaml(kwargs, base_name='lead_length')
+        device_dimensions['lead_length'] = TolerancedSize.fromYaml(kwargs,
+            base_name='lead_length')
         device_dimensions['lead_outside'] = TolerancedSize(maximum =
             device_dimensions['lead_spacing'].maximum +
             device_dimensions.get('lead_length').maximum * 2,
             minimum = device_dimensions['lead_spacing'].minimum +
             device_dimensions.get('lead_length').minimum * 2)
-        
-        Gmin, Zmax, Xmax = ipc_gull_wing(ipc_data, ipc_round_base, manf_tol,
-                device_dimensions['lead_width'], device_dimensions['lead_outside'],
-                lead_len=device_dimensions.get('lead_length'))
-        
-        pad_params['size'] = [(Zmax - Gmin) / 2.0, Xmax]
-
-        x_pad_spacing = (Zmax + Gmin) / 4.0
-    elif ('pad_length' in kwargs) and ('pad_width' in kwargs) and ('pad_spacing' in kwargs):
-        x_pad_spacing = kwargs['pad_spacing'] / 2.0 + kwargs['pad_length'] / 2.0
-        pad_params['size'] = [kwargs['pad_length'], kwargs['pad_width']]
+    elif 'lead_spacing' not in kwargs:
+        if 'lead_length' not in kwargs and 'lead_outside' not in kwargs:
+            raise KeyError("exactly two out of lead_length, lead_spacing and lead_outside must be defined")
+        device_dimensions['lead_length'] = TolerancedSize.fromYaml(kwargs,
+            base_name='lead_length')
+        device_dimensions['lead_outside'] = TolerancedSize.fromYaml(kwargs,
+            base_name='lead_outside')
     else:
-        raise KeyError("Provide all three 'pad' or 'lead' properties ('_spacing', '_length', and '_width')")
+        # all three are defined
+        raise KeyError("exactly two out of lead_length, lead_spacing and lead_outside must be defined")
+
+
+    # gather IPC data (unique parameters for >= 10mm tall caps)
+    ipc_density_suffix = '' if body_size['height'] < 10 else '_10mm'
+    ipc_density = configuration['ipc_density']
+    ipc_data = ipc_defintions['ipc_spec_capae_crystal'][ipc_density + ipc_density_suffix]
+    ipc_round_base = ipc_defintions['ipc_spec_capae_crystal']['round_base']
+
+    manf_tol = {
+        'F': configuration.get('manufacturing_tolerance', 0.1),
+        'P': configuration.get('placement_tolerance', 0.05)
+    }
+
+    # # fully tolerance lead dimensions; leads are dimensioned like SOIC so use gullwing calculator
+    Gmin, Zmax, Xmax = ipc_gull_wing(ipc_data, ipc_round_base, manf_tol,
+            device_dimensions['lead_width'], device_dimensions['lead_outside'],
+            lead_len=device_dimensions.get('lead_length'))
+
+    pad_params['size'] = [(Zmax - Gmin) / 2.0, Xmax]
+
+    x_pad_spacing = (Zmax + Gmin) / 4.0
 
     kicad_mod.append(Pad(number=1, at=[-x_pad_spacing, 0], **pad_params))
     kicad_mod.append(Pad(number=2, at=[x_pad_spacing, 0], **pad_params))
