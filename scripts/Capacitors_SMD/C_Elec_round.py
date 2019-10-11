@@ -158,7 +158,7 @@ def create_footprint(name, configuration, **kwargs):
     fab_x = body_size['length'] / 2.0
     fab_y = body_size['width'] / 2.0
 
-    if kwargs['pin1_chamfer'] == 'auto':
+    if 'pin1_chamfer' not in kwargs or kwargs['pin1_chamfer'] == 'auto':
         fab_edge = min(fab_x/2.0, fab_y/2.0, configuration['fab_pin1_marker_length'])
     else:
         fab_edge = kwargs['pin1_chamfer']
