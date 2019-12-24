@@ -17,75 +17,105 @@
 
 # https://www.vishay.com/docs/28395/150crz.pdf
 
-# http://www.nichicon.co.jp/english/products/pdfs/e-ch_ref.pdf # pad sizes
-# https://media.digikey.com/pdf/Data%20Sheets/Nichicon%20PDFs/ZD_Series.pdf
-# http://nichicon-us.com/english/products/pdfs/e-uzr.pdf
-# http://nichicon-us.com/english/products/pdfs/e-uzs.pdf
-# http://nichicon-us.com/english/products/pdfs/e-uwx.pdf
-
 # UCC, CDE, nor Rubycon datasheets are given above
 
 # 3x5.3
 
 CP_Elec_3x5.4:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-uwx.pdf
     body_length:
       nominal: 3.3
+      tolerance: 0.2
     body_width:
       nominal: 3.3
+      tolerance: 0.2
     body_height:
       nominal: 5.4
+      tolerance: [-0.2, +0.1]
     body_diameter:
       nominal: 3.0
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 2.2
-    pad_spacing: 0.8
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_spacing:
+      nominal: 0.8
+    lead_length:
+      nominal: 1.5
+      tolerance: 0.2
 
 CP_Elec_4x3:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-zd.pdf
     body_length:
       nominal: 4.3
+      tolerance: 0.2
     body_width:
       nominal: 4.3
+      tolerance: 0.2
     body_height:
-      nominal: 3
+      nominal: 3.0
+      tolerance: [0.2, -0.1]
     body_diameter:
       nominal: 4.0
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 2.6
-    pad_spacing: 1
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_spacing:
+      nominal: 1.0
+    lead_length:
+      nominal: 1.8
+      tolerance: 0.3
 
 CP_Elec_4x3.9:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-uzr.pdf
     body_length:
       nominal: 4.3
+      tolerance: 0.2
     body_width:
       nominal: 4.3
+      tolerance: 0.2
     body_height:
       nominal: 3.9
+      tolerance: [0.05, -0.2]
     body_diameter:
       nominal: 4.0
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 2.6
-    pad_spacing: 1
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_spacing:
+      nominal: 1.0
+    lead_length:
+      nominal: 1.8
+      tolerance: 0.3
 
 CP_Elec_4x4.5:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-uzs.pdf
     body_length:
       nominal: 4.3
+      tolerance: 0.2
     body_width:
       nominal: 4.3
+      tolerance: 0.2
     body_height:
       nominal: 4.5
+      tolerance: [0.1, -0.2]
     body_diameter:
       nominal: 4.0
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 2.6
-    pad_spacing: 1
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_length:
+      nominal: 1.8
+      tolerance: 0.3
+    lead_spacing:
+      nominal: 1.0
 
 CP_Elec_4x5.3:
     extra_description: "Vishay"
@@ -103,19 +133,28 @@ CP_Elec_4x5.3:
     pad_spacing: 1
 
 CP_Elec_4x5.4:
-    extra_description: "Panasonic A5 / Nichicon"
-    body_length:
-      nominal: 4.3
-    body_width:
-      nominal: 4.3
-    body_height:
-      nominal: 5.4
-    body_diameter:
-      nominal: 4.0
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 2.6
-    pad_spacing: 1
+  # manufacturer: Nichicon
+  datasheet: "https://www.nichicon.co.jp/english/products/pdfs/e-pcf.pdf"
+  body_length:
+    nominal: 4.3
+    tolerance: 0.2
+  body_width:
+    nominal: 4.3
+    tolerance: 0.2
+  body_height:
+    nominal: 5.4
+    tolerance: [0.1, -0.4]
+  body_diameter:
+    nominal: 4.0
+    tolerance: 0.5
+  lead_width:
+    minimum: 0.5
+    maximum: 0.8
+  lead_outside:
+    nominal: 5.0
+    tolerance: 0.2
+  lead_spacing:
+    nominal: 1.0
 
 CP_Elec_4x5.7:
     extra_description: "United Chemi-Con"
@@ -133,49 +172,73 @@ CP_Elec_4x5.7:
     pad_spacing: 1
 
 CP_Elec_4x5.8:
-    extra_description: "Panasonic"
+    extra_description: "Panasonic B"
+    datasheet: "https://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf"
     body_length:
       nominal: 4.3
+      tolerance: 0.2
     body_width:
       nominal: 4.3
+      tolerance: 0.2
     body_height:
       nominal: 5.8
+      tolerance: 0.3
     body_diameter:
       nominal: 4.0
-    pad_width: 1.6
+    lead_width:
+      nominal: 0.65
+      tolerance: 0.1
     pin1_chamfer: 'auto'
-    pad_length: 2.6
-    pad_spacing: 1
+    lead_length: 1.8
+    lead_spacing: 1.0
 
 CP_Elec_5x3:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-zd.pdf
     body_length:
       nominal: 5.3
+      tolerance: 0.2
     body_width:
       nominal: 5.3
+      tolerance: 0.2
     body_height:
       nominal: 3.0
+      tolerance: [0.2, -0.1]
     body_diameter:
       nominal: 5.0
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 3
-    pad_spacing: 1.4
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_spacing:
+      nominal: 1.3
+    lead_length:
+      nominal: 2.1
+      tolerance: 0.3
 
 CP_Elec_5x3.9:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-uzr.pdf
     body_length:
       nominal: 5.3
+      tolerance: 0.2
     body_width:
       nominal: 5.3
+      tolerance: 0.2
     body_height:
       nominal: 3.9
+      tolerance: [0.05, -0.2]
     body_diameter:
       nominal: 5.0
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 3
-    pad_spacing: 1.4
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_spacing:
+      nominal: 1.3
+    lead_length:
+      nominal: 2.1
+      tolerance: 0.3
 
 CP_Elec_5x4.4:
     extra_description: "Panasonic B45"
@@ -194,18 +257,27 @@ CP_Elec_5x4.4:
 
 CP_Elec_5x4.5:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-uzs.pdf
     body_length:
       nominal: 5.3
+      tolerance: 0.2
     body_width:
       nominal: 5.3
+      tolerance: 0.2
     body_height:
       nominal: 4.5
+      tolerance: [0.1, -0.2]
     body_diameter:
       nominal: 5.0
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 3
-    pad_spacing: 1.4
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_length:
+      nominal: 2.1
+      tolerance: 0.3
+    lead_spacing:
+      nominal: 1.3
 
 CP_Elec_5x5.3:
     extra_description: "Nichicon"
@@ -253,79 +325,121 @@ CP_Elec_5x5.7:
     pad_spacing: 1.4
 
 CP_Elec_5x5.8:
-    extra_description: "Panasonic"
+    extra_description: "Panasonic C"
+    datasheet: "https://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf"
     body_length:
       nominal: 5.3
+      tolerance: 0.2
     body_width:
       nominal: 5.3
+      tolerance: 0.2
     body_height:
       nominal: 5.8
+      tolerance: 0.3
     body_diameter:
       nominal: 5.0
-    pad_width: 1.6
+    lead_width:
+      nominal: 0.65
+      tolerance: 0.1
     pin1_chamfer: 'auto'
-    pad_length: 3
-    pad_spacing: 1.4
+    lead_length: 2.2
+    lead_spacing: 1.5
 
 CP_Elec_5x5.9:
-    extra_description: "Panasonic B6"
-    body_length:
-      nominal: 5.3
-    body_width:
-      nominal: 5.3
-    body_height:
-      nominal: 5.9
-    body_diameter:
-      nominal: 5.0
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 3
-    pad_spacing: 1.4
+  # manufacturer: Nichicon
+  datasheet: "https://www.nichicon.co.jp/english/products/pdfs/e-pcf.pdf"
+  body_length:
+    nominal: 5.3
+    tolerance: 0.2
+  body_width:
+    nominal: 5.3
+    tolerance: 0.2
+  body_height:
+    nominal: 5.9
+    tolerance: [0.1, -0.4]
+  body_diameter:
+    nominal: 5.0
+    tolerance: 0.5
+  lead_width:
+    minimum: 0.5
+    maximum: 0.8
+  lead_outside:
+    nominal: 6.0
+    tolerance: 0.2
+  lead_spacing:
+    nominal: 1.6
 
 CP_Elec_6.3x3:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-zd.pdf
     body_length:
       nominal: 6.6
+      tolerance: 0.2
     body_width:
       nominal: 6.6
+      tolerance: 0.2
     body_height:
       nominal: 3.0
+      tolerance: [0.2, -0.1]
     body_diameter:
       nominal: 6.3
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 3.5
-    pad_spacing: 1.9
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_spacing:
+      nominal: 2.2
+    lead_length:
+      nominal: 2.4
+      tolerance: 0.3
 
 CP_Elec_6.3x3.9:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-uzr.pdf
     body_length:
       nominal: 6.6
+      tolerance: 0.2
     body_width:
       nominal: 6.6
+      tolerance: 0.2
     body_height:
       nominal: 3.9
+      tolerance: [0.05, -0.2]
     body_diameter:
       nominal: 6.3
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 3.5
-    pad_spacing: 1.9
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_spacing:
+      nominal: 2.2
+    lead_length:
+      nominal: 2.4
+      tolerance: 0.3
 
 CP_Elec_6.3x4.5:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-uzs.pdf
     body_length:
       nominal: 6.6
+      tolerance: 0.2
     body_width:
       nominal: 6.6
+      tolerance: 0.2
     body_height:
       nominal: 4.5
+      tolerance: [0.1, -0.2]
     body_diameter:
       nominal: 6.3
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 3.5
-    pad_spacing: 1.9
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_length:
+      nominal: 2.4
+      tolerance: 0.3
+    lead_spacing:
+      nominal: 2.2
 
 CP_Elec_6.3x4.9:
     extra_description: "Panasonic C5"
@@ -387,20 +501,29 @@ CP_Elec_6.3x5.4:
     pad_length: 3.5
     pad_spacing: 2.1
 
-CP_Elec_6.3x5.4_Nichicon:
+CP_Elec_6.3x5.4:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-uwx.pdf
     body_length:
       nominal: 6.6
+      tolerance: 0.2
     body_width:
       nominal: 6.6
+      tolerance: 0.2
     body_height:
       nominal: 5.4
+      tolerance: [-0.2, +0.1]
     body_diameter:
       nominal: 6.3
-    pad_width: 1.6
-    pin1_chamfer: 'auto'
-    pad_length: 3.5
-    pad_spacing: 1.9
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_spacing:
+      nominal: 2.2
+    lead_length:
+      nominal: 2.4
+      tolerance: 0.2
 
 CP_Elec_6.3x5.7:
     extra_description: "United Chemi-Con"
@@ -418,19 +541,25 @@ CP_Elec_6.3x5.7:
     pad_spacing: 1.9
 
 CP_Elec_6.3x5.8:
-    extra_description: "Nichicon"
+    extra_description: "Panasonic D, Nichicon"
+    datasheet: "https://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf"
     body_length:
       nominal: 6.6
+      tolerance: 0.2
     body_width:
       nominal: 6.6
+      tolerance: 0.2
     body_height:
       nominal: 5.8
+      tolerance: 0.3
     body_diameter:
       nominal: 6.3
-    pad_width: 1.6
+    lead_width:
+      nominal: 0.65
+      tolerance: 0.1
     pin1_chamfer: 'auto'
-    pad_length: 3.5
-    pad_spacing: 1.9
+    lead_length: 2.6
+    lead_spacing: 1.8
 
 CP_Elec_6.3x5.9:
     extra_description: "Panasonic C6"
@@ -448,19 +577,25 @@ CP_Elec_6.3x5.9:
     pad_spacing: 2.1
 
 CP_Elec_6.3x7.7:
-    extra_description: "Nichicon"
+    extra_description: "Panasonic D8, Nichion"
+    datasheet: "https://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf"
     body_length:
       nominal: 6.6
+      tolerance: 0.2
     body_width:
       nominal: 6.6
+      tolerance: 0.2
     body_height:
       nominal: 7.7
+      tolerance: 0.3
     body_diameter:
       nominal: 6.3
-    pad_width: 1.6
+    lead_width:
+      nominal: 0.65
+      tolerance: 0.1
     pin1_chamfer: 'auto'
-    pad_length: 3.5
-    pad_spacing: 1.9
+    lead_length: 2.6
+    lead_spacing: 1.8
 
 CP_Elec_6.3x9.9:
     extra_description: "Panasonic C10"
@@ -479,33 +614,48 @@ CP_Elec_6.3x9.9:
 
 CP_Elec_8x5.4:
     extra_description: "Nichicon"
+    datasheet: https://www.nichicon.co.jp/english/products/pdfs/e-uwx.pdf
     body_length:
       nominal: 8.3
+      tolerance: 0.2
     body_width:
       nominal: 8.3
+      tolerance: 0.2
     body_height:
       nominal: 5.4
+      tolerance: [-0.2, +0.1]
     body_diameter:
       nominal: 8.0
-    pad_width: 2.5
-    pin1_chamfer: 'auto'
-    pad_length: 4
-    pad_spacing: 2.1
+      tolerance: 0.5
+    lead_width:
+      minimum: 0.5
+      maximum: 0.8
+    lead_spacing:
+      nominal: 2.3
+    lead_length:
+      nominal: 3.3
+      tolerance: 0.2
 
 CP_Elec_8x6.2:
-    extra_description: "Nichicon"
+    extra_description: "Panasonic E, Nichion"
+    datasheet: "https://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf"
     body_length:
       nominal: 8.3
+      tolerance: 0.2
     body_width:
       nominal: 8.3
+      tolerance: 0.2
     body_height:
       nominal: 6.2
+      tolerance: 0.3
     body_diameter:
       nominal: 8.0
-    pad_width: 2.5
+    lead_width:
+      nominal: 0.65
+      tolerance: 0.1
     pin1_chamfer: 'auto'
-    pad_length: 4
-    pad_spacing: 2.1
+    lead_length: 3.4
+    lead_spacing: 2.2
 
 CP_Elec_8x6.5:
     extra_description: "Rubycon"
@@ -553,19 +703,47 @@ CP_Elec_8x6.9:
     pad_spacing: 2.8
 
 CP_Elec_8x10:
-    extra_description: "Nichicon"
+  datasheet: "https://www.vishay.com/docs/28395/150crz.pdf"
+  body_length:
+    nominal: 8
+    maximum: 8.5
+  body_width:
+    nominal: 8
+    maximum: 8.5
+  body_height:
+    nominal: 10
+    maximum: 10.5
+  body_diameter:
+    nominal: 8.0
+  lead_width:
+    nominal: 1.0 # only max specified
+    maximum: 1.0
+  lead_spacing:
+    nominal: 2.2
+  lead_protrude:
+    minimum: 0.4
+    maximum: 1.0
+
+CP_Elec_8x10.2:
+    extra_description: "Panasonic F"
+    datasheet: "https://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf"
     body_length:
       nominal: 8.3
+      tolerance: 0.2
     body_width:
       nominal: 8.3
+      tolerance: 0.2
     body_height:
-      nominal: 10
+      nominal: 10.2
+      tolerance: 0.3
     body_diameter:
       nominal: 8.0
-    pad_width: 2.5
+    lead_width:
+      nominal: 0.9
+      tolerance: 0.2
     pin1_chamfer: 'auto'
-    pad_length: 3.5
-    pad_spacing: 3
+    lead_length: 3.4
+    lead_spacing: 3.1
 
 CP_Elec_8x10.5:
     extra_description: "Vishay 0810"
@@ -629,35 +807,53 @@ CP_Elec_10x7.9:
     pad_spacing: 4.3
 
 CP_Elec_10x10:
-    extra_description: "Nichicon"
-    body_length:
-      nominal: 10.3
-    body_width:
-      nominal: 10.3
-    body_height:
-      nominal: 10.0
-    body_diameter:
-      nominal: 10.0
-    pad_width: 2.5
-    pin1_chamfer: 'auto'
-    pad_length: 4
-    pad_spacing: 4
+  # defining_component: Vishay 10x10x10
+  # within_tolerances: Nichicon 10x10
+  datasheet: "https://www.vishay.com/docs/28395/150crz.pdf, https://www.nichicon.co.jp/english/products/pdfs/e-pcf.pdf"
+  body_length:
+    nominal: 10
+    maximum: 10.5
+  body_width:
+    nominal: 10
+    maximum: 10.5
+  body_height:
+    nominal: 10
+    maximum: 10.5 # Vishay
+  body_diameter:
+    nominal: 10.0
+    tolerance: 0.5 # Nichicon
+  lead_width:
+    minimum: 0.8 # Nichicon
+    maximum: 1.1 # Nichicon, Vishay: 1.0
+  lead_spacing:
+    nominal: 3.5 # Vishay
+  lead_protrude:
+    minimum: 0.4 # Vishay
+    maximum: 1.0 # Vishay
 
-CP_Elec_10x10.5:
-    extra_description: "Vishay 1010"
-    datasheet: "http://www.vishay.com/docs/28395/150crz.pdf"
-    body_length:
-      nominal: 10.5
-    body_width:
-      nominal: 10.5
-    body_height:
-      nominal: 10.5
-    body_diameter:
-      nominal: 10.0
-    pad_width: 2.5
-    pin1_chamfer: 'auto'
-    pad_length: 4.4
-    pad_spacing: 4.0
+CP_Elec_10x10.2:
+  extra_description: Panasonic G
+  datasheet: https://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf
+  body_length:
+    nominal: 10.2
+    tolerance: 0.3
+  body_width:
+    nominal: 10.2
+    tolerance: 0.3
+  body_height:
+    nominal: 10.2
+    tolerance: 0.3
+  body_diameter:
+    nominal: 10.0
+    tolerance: 0.5
+  lead_width:
+    nominal: 0.9
+    tolerance: 0.2
+  lead_protrude:
+    nominal: 0.7
+    tolerance: 0.2
+  lead_spacing:
+    nominal: 4.6
 
 CP_Elec_10x12.5:
     extra_description: "Vishay 1012"
@@ -706,8 +902,50 @@ CP_Elec_10x14.3:
     pad_length: 4.4
     pad_spacing: 4.0
 
+CP_Elec_12.5x13.5:
+    extra_description: "Panasonic H13"
+    datasheet: "https://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf"
+    body_length:
+      nominal: 13.5
+      tolerance: 0.2
+    body_width:
+      nominal: 13.5
+      tolerance: 0.2
+    body_height:
+      nominal: 13.5
+      tolerance: 0.5
+    body_diameter:
+      nominal: 12.5
+    lead_width:
+      nominal: 0.9
+      tolerance: 0.3
+    pin1_chamfer: 'auto'
+    lead_length: 4.7
+    lead_spacing: 4.4
+
 # TODO: Vishay 12.5x14
 # TODO: Vishay 12.5x16.5
+
+CP_Elec_16x16.5:
+    extra_description: "Panasonic J16"
+    datasheet: "https://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf"
+    body_length:
+      nominal: 17.0
+      tolerance: 0.2
+    body_width:
+      nominal: 17.0
+      tolerance: 0.2
+    body_height:
+      nominal: 16.5
+      tolerance: 0.5
+    body_diameter:
+      nominal: 16.0
+    lead_width:
+      nominal: 1.2
+      tolerance: 0.3
+    pin1_chamfer: 'auto'
+    lead_length: 5.5
+    lead_spacing: 6.7
 
 CP_Elec_16x17.5:
     extra_description: "Vishay 1616"
@@ -740,6 +978,27 @@ CP_Elec_16x22:
     pin1_chamfer: 'auto'
     pad_length: 7.8
     pad_spacing: 4.7
+
+CP_Elec_18x16.5:
+    extra_description: "Panasonic K16"
+    datasheet: "https://industrial.panasonic.com/cdbs/www-data/pdf/RDE0000/ABA0000C1181.pdf"
+    body_length:
+      nominal: 19.0
+      tolerance: 0.2
+    body_width:
+      nominal: 19.0
+      tolerance: 0.2
+    body_height:
+      nominal: 16.5
+      tolerance: 0.5
+    body_diameter:
+      nominal: 18.0
+    lead_width:
+      nominal: 1.2
+      tolerance: 0.3
+    pin1_chamfer: 'auto'
+    lead_length: 6.7
+    lead_spacing: 6.7
 
 CP_Elec_18x17.5:
     extra_description: "Vishay 1816"
