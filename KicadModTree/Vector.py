@@ -19,7 +19,7 @@ from builtins import round
 import warnings
 
 from KicadModTree.util.kicad_util import formatFloat
-from math import sqrt
+from math import sqrt, sin, cos, hypot, atan2, degrees, radians
 
 
 class Vector2D(object):
@@ -45,7 +45,7 @@ class Vector2D(object):
                 raise TypeError('you have to give x and y coordinate')
         elif isinstance(coordinates, Vector2D):
             # convert Vector2D as well as Vector3D to dict
-            coordinates = coordinates.__dict__()
+            coordinates = coordinates.to_dict()
 
         # parse vectors with format: Vector2D({'x':0, 'y':0})
         if type(coordinates) is dict:
@@ -85,7 +85,8 @@ class Vector2D(object):
         :return: distance between self and other point
         """
         other = Vector2D.__arithmetic_parse(value)
-        return sqrt((other.x - self.x)**2 + (other.y - self.y)**2)
+        d = other - self
+        return hypot(d.x, d.y)
 
     @staticmethod
     def __arithmetic_parse(value):
@@ -148,7 +149,7 @@ class Vector2D(object):
     def __truediv__(self, obj):
         return self.__div__(obj)
 
-    def __dict__(self):
+    def to_dict(self):
         return {'x': self.x, 'y': self.y}
 
     def render(self, formatcode):
@@ -160,10 +161,10 @@ class Vector2D(object):
                                  y=formatFloat(self.y))
 
     def __repr__(self):
-        return "Vector2D (x={x}, y={y})".format(**self.__dict__())
+        return "Vector2D (x={x}, y={y})".format(**self.to_dict())
 
     def __str__(self):
-        return "(x={x}, y={y})".format(**self.__dict__())
+        return "(x={x}, y={y})".format(**self.to_dict())
 
     def __getitem__(self, key):
         if key == 0 or key == 'x':
@@ -190,6 +191,90 @@ class Vector2D(object):
 
     def __copy__(self):
         return Vector2D(self.x, self.y)
+
+    def rotate(self, angle, origin=(0, 0), use_degrees=True):
+        r""" Rotate vector around given origin
+
+        :params:
+            * *angle* (``float``)
+                rotation angle
+            * *origin* (``Vector2D``)
+                origin point for the rotation. default: (0, 0)
+            * *use_degrees* (``boolean``)
+                rotation angle is given in degrees. default:True
+        """
+
+        op = Vector2D(origin)
+
+        if use_degrees:
+            angle = radians(angle)
+
+        temp = op.x + cos(angle) * (self.x - op.x) - sin(angle) * (self.y - op.y)
+        self.y = op.y + sin(angle) * (self.x - op.x) + cos(angle) * (self.y - op.y)
+        self.x = temp
+
+        return self
+
+    def to_polar(self, origin=(0, 0), use_degrees=True):
+        r""" Get polar representation of the vector
+
+        :params:
+            * *origin* (``Vector2D``)
+                origin point for polar conversion. default: (0, 0)
+            * *use_degrees* (``boolean``)
+                angle in degrees. default:True
+        """
+
+        op = Vector2D(origin)
+
+        diff = self - op
+        radius = hypot(diff.x, diff.y)
+
+        angle = atan2(diff.y, diff.x)
+        if use_degrees:
+            angle = degrees(angle)
+
+        return (radius, angle)
+
+    @staticmethod
+    def from_polar(radius, angle, origin=(0, 0), use_degrees=True):
+        r""" Generate a vector from its polar representation
+
+        :params:
+            * *radius* (``float``)
+                lenght of the vector
+            * *angle* (``float``)
+                angle of the vector
+            * *origin* (``Vector2D``)
+                origin point for polar conversion. default: (0, 0)
+            * *use_degrees* (``boolean``)
+                angle in degrees. default:True
+        """
+
+        if use_degrees:
+            angle = radians(angle)
+
+        x = radius * cos(angle)
+        y = radius * sin(angle)
+
+        return Vector2D({'x': x, 'y': y})+Vector2D(origin)
+
+    def to_homogeneous(self):
+        r""" Get homogeneous representation
+        """
+
+        return Vector3D(self.x, self.y, 1)
+
+    @staticmethod
+    def from_homogeneous(source):
+        r""" Recover 2d vector from its homogeneous representation
+
+        :params:
+            * *source* (``Vector3D``)
+                3d homogeneous representation
+        """
+
+        return Vector2D(source.x/source.z, source.y/source.z)
 
 
 class Vector3D(Vector2D):
@@ -222,7 +307,7 @@ class Vector3D(Vector2D):
                 raise TypeError('you have to give at least x and y coordinate')
         elif isinstance(coordinates, Vector2D):
             # convert Vector2D as well as Vector3D to dict
-            coordinates = coordinates.__dict__()
+            coordinates = coordinates.to_dict()
 
         # parse vectors with format: Vector2D({'x':0, 'y':0})
         if type(coordinates) is dict:
@@ -263,6 +348,19 @@ class Vector3D(Vector2D):
             return self.__copy__()
 
         return Vector3D([round(v / base) * base for v in self])
+
+    def cross_product(self, other):
+        other = Vector3D.__arithmetic_parse(other)
+
+        return Vector3D({
+                    'x': self.y*other.z - self.z*other.y,
+                    'y': self.z*other.x - self.x*other.z,
+                    'z': self.x*other.y - self.y*other.x})
+
+    def dot_product(self, other):
+        other = Vector3D.__arithmetic_parse(other)
+
+        return self.x*other.x + self.y*other.y + self.z*other.z
 
     @staticmethod
     def __arithmetic_parse(value):
@@ -333,7 +431,7 @@ class Vector3D(Vector2D):
     def __truediv__(self, obj):
         return self.__div__(obj)
 
-    def __dict__(self):
+    def to_dict(self):
         return {'x': self.x, 'y': self.y, 'z': self.z}
 
     def render(self, formatcode):
@@ -346,10 +444,10 @@ class Vector3D(Vector2D):
                                  z=formatFloat(self.z))
 
     def __repr__(self):
-        return "Vector3D (x={x}, y={y}, z={z})".format(**self.__dict__())
+        return "Vector3D (x={x}, y={y}, z={z})".format(**self.to_dict())
 
     def __str__(self):
-        return "(x={x}, y={y}, z={z})".format(**self.__dict__())
+        return "(x={x}, y={y}, z={z})".format(**self.to_dict())
 
     def __getitem__(self, key):
         if key == 0 or key == 'x':

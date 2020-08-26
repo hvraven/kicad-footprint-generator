@@ -17,6 +17,9 @@ from footprint_text_fields import addTextFields
 from ipc_pad_size_calculators import *
 from quad_dual_pad_border import add_dual_or_quad_pad_border
 
+sys.path.append(os.path.join(sys.path[0], "..", "utils"))
+from ep_handling_utils import getEpRoundRadiusParams
+
 ipc_density = 'nominal'
 ipc_doc_file = '../ipc_definitions.yaml'
 category = 'NoLead'
@@ -41,8 +44,14 @@ class NoLead():
                 self.ipc_defintions = yaml.safe_load(ipc_stream)
 
                 self.configuration['min_ep_to_pad_clearance'] = 0.2
+
+                #ToDo: find a settings file that can contain these.
+                self.configuration['paste_radius_ratio'] = 0.25
+                self.configuration['paste_maximum_radius'] = 0.25
+
                 if 'ipc_generic_rules' in self.ipc_defintions:
                     self.configuration['min_ep_to_pad_clearance'] = self.ipc_defintions['ipc_generic_rules'].get('min_ep_to_pad_clearance', 0.2)
+
             except yaml.YAMLError as exc:
                 print(exc)
 
@@ -96,7 +105,7 @@ class NoLead():
                     pull_back=pull_back
                     )
 
-        min_ep_to_pad_clearance = configuration['min_ep_to_pad_clearance']
+        min_ep_to_pad_clearance = self.configuration['min_ep_to_pad_clearance']
 
         heel_reduction_max = 0
 
@@ -319,20 +328,18 @@ class NoLead():
             ).lstrip())
         kicad_mod.setAttribute('smd')
 
-        pad_shape_details = {}
-        pad_shape_details['shape'] = Pad.SHAPE_ROUNDRECT
-        pad_shape_details['radius_ratio'] = configuration.get('round_rect_radius_ratio', 0)
-        if 'round_rect_max_radius' in configuration:
-            pad_shape_details['maximum_radius'] = configuration['round_rect_max_radius']
+        pad_radius = add_dual_or_quad_pad_border(kicad_mod, self.configuration, pad_details, device_params)
 
         if device_dimensions['has_EP']:
+            pad_shape_details = getEpRoundRadiusParams(device_params, self.configuration, pad_radius)
+            ep_pad_number = device_params.get('EP_pin_number', pincount+1)
             if with_thermal_vias:
                 thermals = device_params['thermal_vias']
                 paste_coverage = thermals.get('EP_paste_coverage',
                                                device_params.get('EP_paste_coverage', DEFAULT_PASTE_COVERAGE))
 
                 kicad_mod.append(ExposedPad(
-                    number=pincount+1, size=EP_size,
+                    number=ep_pad_number, size=EP_size,
                     at=EP_center,
                     paste_layout=thermals.get('EP_num_paste_pads', device_params.get('EP_num_paste_pads', 1)),
                     paste_coverage=paste_coverage,
@@ -350,15 +357,13 @@ class NoLead():
                     ))
             else:
                 kicad_mod.append(ExposedPad(
-                    number=pincount+1, size=EP_size,
+                    number=ep_pad_number, size=EP_size,
                     at=EP_center,
                     paste_layout=device_params.get('EP_num_paste_pads', 1),
                     paste_coverage=device_params.get('EP_paste_coverage', DEFAULT_PASTE_COVERAGE),
                     kicad4_compatible=args.kicad4_compatible,
                     **pad_shape_details
                     ))
-
-        add_dual_or_quad_pad_border(kicad_mod, configuration, pad_details, device_params)
 
         body_edge = {
             'left': -size_x/2,
@@ -525,7 +530,7 @@ if __name__ == "__main__":
                         help='list of files holding information about what devices should be created.')
     parser.add_argument('--global_config', type=str, nargs='?', help='the config file defining how the footprint will look like. (KLC)', default='../../tools/global_config_files/config_KLCv3.0.yaml')
     parser.add_argument('--series_config', type=str, nargs='?', help='the config file defining series parameters.', default='../package_config_KLCv3.yaml')
-    parser.add_argument('--density', type=str, nargs='?', help='Density level (L,N,M)', default='N')
+    parser.add_argument('--density', type=str, nargs='?', help='IPC density level (L,N,M)', default='N')
     parser.add_argument('--ipc_doc', type=str, nargs='?', help='IPC definition document', default='../ipc_definitions.yaml')
     parser.add_argument('--force_rectangle_pads', action='store_true', help='Force the generation of rectangle pads instead of rounded rectangle')
     parser.add_argument('--kicad4_compatible', action='store_true', help='Create footprints kicad 4 compatible')
